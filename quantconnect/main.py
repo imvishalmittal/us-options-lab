@@ -8,8 +8,7 @@ from AlgorithmImports import *
 import json
 import math
 
-from strategy_core import Bar as ResearchBar
-from strategy_core import EntryResearchEngine
+from strategy_core import EntryResearchEngine, ResearchBar
 
 
 PERIODS = {
@@ -31,6 +30,12 @@ class UsOptionsEntryResearchAlgorithm(QCAlgorithm):
         self.spy = self.add_equity("SPY", Resolution.MINUTE, extended_market_hours=False).symbol
         self.engine = EntryResearchEngine()
         self.period_name = period
+        self.last_research_bar = None
+        self.schedule.on(
+            self.date_rules.every_day(self.spy),
+            self.time_rules.before_market_close(self.spy, 15),
+            self._force_session_exit,
+        )
 
     def on_data(self, data):
         bar = data.bars.get(self.spy)
@@ -44,7 +49,14 @@ class UsOptionsEntryResearchAlgorithm(QCAlgorithm):
             close=float(bar.close),
             volume=float(bar.volume),
         )
+        self.last_research_bar = research_bar
         self.engine.on_bar(research_bar)
+
+    def _force_session_exit(self):
+        bar = self.last_research_bar
+        if bar is None or bar.timestamp.date() != self.time.date():
+            return
+        self.engine.force_close(bar, "FORCED_15_MIN_BEFORE_EXCHANGE_CLOSE")
 
     def on_end_of_algorithm(self):
         for strategy, summary in self.engine.summaries().items():
