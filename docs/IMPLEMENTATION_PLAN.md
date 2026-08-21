@@ -2,7 +2,7 @@
 
 ## Status
 
-Strategy catalog and causal quote/exit primitives are implemented. No market-data provider has been approved and no strategy backtest has been run.
+Strategy catalog and causal quote/exit primitives are implemented. No market data has been downloaded and no strategy backtest has been run.
 
 ## Phase 0 — Repository foundation
 
@@ -21,8 +21,9 @@ Strategy catalog and causal quote/exit primitives are implemented. No market-dat
 - [x] Define provider-neutral ordered quote observations and minute bid/ask bars
 - [x] Reject crossed, invalid, and zero-size quotes with reason codes
 - [x] Shortlist Databento OPRA as the preferred small pilot
-- [ ] Add an authenticated provider adapter after a key is configured
-- [ ] Run `metadata.get_cost` before downloading any OPRA data
+- [x] Add a bounded, metadata-only Databento cost-estimate adapter
+- [ ] Configure `DATABENTO_API_KEY` as a repository Actions secret
+- [ ] Run and record `metadata.get_cost` before downloading any OPRA data
 - [ ] Evaluate five non-consecutive SPY sessions across volatility regimes
 - [ ] Measure missing, stale, crossed, and zero-size quotes
 - [ ] Verify US holiday, early-close, and daylight-saving behavior

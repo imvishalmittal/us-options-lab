@@ -35,9 +35,11 @@ All candidates and overlays remain `paperEnabled: false` until the historical-da
 
 ## Current status
 
-**Strategy catalog and causal exit/quote primitives are implemented. No backtest has been run and no market-data provider has been approved.**
+**Strategy catalog, causal exit/quote primitives, and a metadata-only Databento cost estimator are implemented. No backtest has been run and no market data has been downloaded.**
 
 The preferred feasibility pilot is historical SPY OPRA data with ordered NBBO observations. A last quote at each minute is not sufficient to reconstruct within-minute V2/V3 peaks and stops; the pilot requires one-second or event-level quotes from which bid/ask bars can be derived.
+
+The manual `Databento cost estimate` workflow calls only `metadata.get_cost`. It is capped at seven days and records `download_performed: false`. Add `DATABENTO_API_KEY` as a repository Actions secret before running it; never paste the key into an issue, workflow input, commit, or chat.
 
 ## Safety boundary
 
@@ -55,6 +57,7 @@ Requires Node.js 20 or newer.
 ```bash
 npm test
 npm run check
+python -m unittest discover -s test_python -p 'test_*.py'
 node src/cli.mjs
 ```
 

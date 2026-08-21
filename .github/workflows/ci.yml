@@ -22,3 +22,5 @@ jobs:
           node-version: 22
       - name: Run checks and tests
         run: npm run ci
+      - name: Run provider-adapter unit tests
+        run: python -m unittest discover -s test_python -p 'test_*.py'
