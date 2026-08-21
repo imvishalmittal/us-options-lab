@@ -1,0 +1,15 @@
+{
+  "name": "us-options-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Research-only laboratory for systematic US options strategies",
+  "type": "module",
+  "scripts": {
+    "check": "node --check src/research-config.mjs && node --check src/cli.mjs && node --check test/research-config.test.mjs",
+    "test": "node --test",
+    "ci": "npm run check && npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
