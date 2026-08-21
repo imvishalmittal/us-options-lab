@@ -6,6 +6,10 @@ Determine whether a systematic, long-premium SPY options strategy has positive o
 
 ## Foundation universe
 
+- Simulated starting capital: $1,000
+- Account model: cash-only
+- Maximum concurrent positions: one
+- Maximum initial option debit: $220
 - Primary underlying: SPY
 - Direction: long call or long put
 - Size: one simulated contract
@@ -15,7 +19,7 @@ Determine whether a systematic, long-premium SPY options strategy has positive o
 - Forced exit: 15:45 ET
 - No overnight positions, option writing, spreads, assignment, or exercise
 
-QQQ, XSP, SPX, and individual-stock options are outside the foundation phase. They require separate predeclared studies.
+The $1,000 balance is an accounting baseline for backtests and future paper sessions. It is not broker funding and cannot place a live order. QQQ, XSP, SPX, and individual-stock options are outside the foundation phase and require separate predeclared studies.
 
 ## Contract-selection hypotheses
 
@@ -31,6 +35,8 @@ A selector must use only information observable before the simulated order.
 - Buy at the contemporaneous ask.
 - Sell at the contemporaneous bid.
 - Add explicit commissions, regulatory fees, and predeclared slippage.
+- Debit, costs, and realized P&L must update the single $1,000 paper ledger.
+- Reject a contract whose initial debit exceeds available paper cash or $220.
 - If a quote is crossed, stale, missing, or otherwise invalid, reject the observation.
 - Never synthesize a tradable quote from option OHLC alone.
 - When event ordering within a bar is ambiguous, use the adverse outcome or reject the trade.
@@ -59,6 +65,7 @@ Report at minimum:
 - Results by direction, DTE, entry-time band, weekday, volatility regime, and selector
 - Concentration in the best day, month, and trade
 - Data rejection counts and reasons
+- Paper balance, deployed debit, and return on the $1,000 starting capital
 
 Development, validation, and holdout results must remain separate. A result is not deployable merely because one period is profitable.
 
