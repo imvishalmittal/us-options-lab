@@ -2,7 +2,7 @@
 
 ## Status
 
-Foundation setup. No market-data provider has been approved and no strategy backtest has been run.
+Strategy catalog and causal quote/exit primitives are implemented. No market-data provider has been approved and no strategy backtest has been run.
 
 ## Phase 0 — Repository foundation
 
@@ -14,39 +14,54 @@ Foundation setup. No market-data provider has been approved and no strategy back
 - [x] CI syntax and regression tests
 - [x] Research protocol and data-quality gates
 
-## Phase 1 — Historical-data feasibility
+## Phase 1 — Historical-data and strategy feasibility
 
-- [ ] Define a provider-neutral one-minute option quote interface
-- [ ] Evaluate coverage for expired SPY contracts, bid/ask quotes, and timestamps
+- [x] Define four US-specific entry candidates across open, midday, and power hour
+- [x] Preserve V2/V3 only as disabled secondary exit benchmarks
+- [x] Define provider-neutral ordered quote observations and minute bid/ask bars
+- [x] Reject crossed, invalid, and zero-size quotes with reason codes
+- [x] Shortlist Databento OPRA as the preferred small pilot
+- [ ] Add an authenticated provider adapter after a key is configured
+- [ ] Run `metadata.get_cost` before downloading any OPRA data
+- [ ] Evaluate five non-consecutive SPY sessions across volatility regimes
 - [ ] Measure missing, stale, crossed, and zero-size quotes
 - [ ] Verify US holiday, early-close, and daylight-saving behavior
-- [ ] Estimate data cost before purchasing or running a large extraction
-- [ ] Produce a go/no-go feasibility report
+- [ ] Produce a go/no-go feasibility report from actual pilot data
 
-Exit criterion: a reproducible sample proves that causal, one-minute, expired-contract bid/ask reconstruction is possible. Otherwise stop the options backtest.
+Exit criterion: a reproducible sample proves that causal expired-contract bid/ask reconstruction is possible at an acceptable cost. Otherwise stop the options backtest.
 
-## Phase 2 — Backtest engine
+## Phase 2 — Underlying entry backtests
 
-- [ ] Freeze V1 entry and exit rules before loading validation data
+- [ ] Freeze numeric entry thresholds using development data only
+- [ ] Test Opening Drive and Failed Open Break first
+- [ ] Test Midday Compression only after the opening study is frozen
+- [ ] Test Power-Hour Momentum with explicit out-of-sample skepticism
+- [ ] Reject entry families that fail development and validation
+- [ ] Preserve an untouched holdout period
+
+Exit criterion: only entry families with stable SPY-level evidence proceed to option replay.
+
+## Phase 3 — Options replay
+
 - [ ] Implement causal contract selection
 - [ ] Model the single $1,000 paper ledger and available cash
 - [ ] Model ask entry, bid exit, commissions, fees, and slippage
-- [ ] Add adverse handling for ambiguous intrabar exits
+- [ ] Compare the structural 2R exit against V2 and V3 on identical cohorts
+- [ ] Add adverse handling for unresolved intrabar ambiguity
 - [ ] Persist rejected observations with explicit reason codes
-- [ ] Separate development, validation, and untouched holdout periods
+- [ ] Compare delta/debit selection before the fixed-$1.80 selector
 
-Exit criterion: deterministic replay, full audit trail, and zero look-ahead violations in tests.
+Exit criterion: deterministic replay, full audit trail, zero look-ahead violations, and robust validation/holdout results.
 
-## Phase 3 — Research decision
+## Phase 4 — Research decision
 
-- [ ] Compare fixed-premium and delta/debit selectors
-- [ ] Evaluate robustness, concentration, drawdown, and losing streak
+- [ ] Evaluate expectancy, concentration, drawdown, and losing streak
 - [ ] Reject strategies that depend on one period or a few outliers
 - [ ] Publish a signed-off research report
 
 Exit criterion: either reject the strategy or authorize forward paper observation. Historical profit alone is insufficient.
 
-## Phase 4 — Forward paper lab
+## Phase 5 — Forward paper lab
 
 - [ ] Add short scheduled checkpoints rather than a market-long job
 - [ ] Persist resumable session state and the $1,000 paper ledger

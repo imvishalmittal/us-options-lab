@@ -5,7 +5,7 @@
   "description": "Research-only laboratory for systematic US options strategies",
   "type": "module",
   "scripts": {
-    "check": "node --check src/research-config.mjs && node --check src/cli.mjs && node --check test/research-config.test.mjs",
+    "check": "for file in src/*.mjs test/*.mjs; do node --check \"$file\"; done",
     "test": "node --test",
     "ci": "npm run check && npm test"
   },

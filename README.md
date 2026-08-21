@@ -4,41 +4,48 @@ A separate, research-only laboratory for testing systematic US options strategie
 
 ## Foundation scope
 
-The first study is intentionally narrow:
-
 - $1,000 simulated starting capital in a cash-only paper account
 - SPY long calls or long puts
 - One simulated contract and no more than one open position
 - Maximum initial option debit of $220
-- One-minute causal market data
+- One-minute causal market data derived from ordered bid/ask observations
 - At least one full day to expiry; no 0DTE
-- Entry research window: 09:35–10:00 ET
-- Forced same-day exit: 15:45 ET
+- Forced same-day exit by 15:45 ET
 - Buy at the recorded ask and sell at the recorded bid
 - Full commissions, fees, spread, and slippage
 - No short options, spreads, overnight holding, exercise, or assignment
 
-Two predeclared contract-selection hypotheses will be compared:
+Two contract-selection hypotheses will eventually be compared:
 
 1. Contract closest to a $1.80 premium within $1.60–$2.20.
 2. Contract with absolute delta 0.35–0.45 and debit no greater than $220.
 
-These are research hypotheses, not recommendations.
+## Strategy architecture
+
+US entry hypotheses are deliberately separate from the NIFTY lab:
+
+- Opening Drive Continuation
+- Failed Opening Break Reversal
+- Midday Compression Breakout
+- Power-Hour Momentum
+
+NIFTY V2 and V3 are not treated as US entry strategies. Their $1.80/$1.60/$2.20 literal translations are implemented only as secondary exit benchmarks. The primary benchmark is an underlying-structure stop with a 2R target.
+
+All candidates and overlays remain `paperEnabled: false` until the historical-data and backtest gates pass.
 
 ## Current status
 
-**Foundation only. No backtest has been run. No data provider has been approved.**
+**Strategy catalog and causal exit/quote primitives are implemented. No backtest has been run and no market-data provider has been approved.**
 
-The next gate is a historical-data feasibility study. We need reliable expired SPY option quotes with one-minute bid/ask data. Option OHLC alone is not sufficient for a credible execution backtest.
-
-If that evidence is unavailable or too costly, this options study stops and the fallback becomes a cash SPY/QQQ ETF research track.
+The preferred feasibility pilot is historical SPY OPRA data with ordered NBBO observations. A last quote at each minute is not sufficient to reconstruct within-minute V2/V3 peaks and stops; the pilot requires one-second or event-level quotes from which bid/ask bars can be derived.
 
 ## Safety boundary
 
 - `mode` is hard-coded to `RESEARCH_ONLY`.
 - The $1,000 balance is simulated and cannot fund or place an order.
 - Live orders and broker integration are disabled and regression-tested.
-- The repository must not contain broker credentials or order endpoints.
+- No candidate strategy is paper-enabled.
+- The repository must not contain broker credentials or licensed raw data.
 - The present India-resident setup must not be assumed to permit overseas derivatives.
 
 ## Run locally
@@ -54,6 +61,8 @@ node src/cli.mjs
 ## Documentation
 
 - [Research protocol](docs/RESEARCH_PROTOCOL.md)
+- [US strategy research](docs/STRATEGY_RESEARCH.md)
+- [Historical-data feasibility](docs/DATA_FEASIBILITY.md)
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
 
 ## Relationship to the NIFTY lab
