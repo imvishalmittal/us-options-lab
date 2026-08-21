@@ -7,6 +7,8 @@ Foundation setup. No market-data provider has been approved and no strategy back
 ## Phase 0 — Repository foundation
 
 - [x] Research-only configuration with executable safety checks
+- [x] $1,000 cash-only paper-account baseline
+- [x] One-position and $220 maximum-initial-debit limits
 - [x] SPY-only initial scope
 - [x] Fixed-premium and delta/debit contract-selection hypotheses
 - [x] CI syntax and regression tests
@@ -27,6 +29,7 @@ Exit criterion: a reproducible sample proves that causal, one-minute, expired-co
 
 - [ ] Freeze V1 entry and exit rules before loading validation data
 - [ ] Implement causal contract selection
+- [ ] Model the single $1,000 paper ledger and available cash
 - [ ] Model ask entry, bid exit, commissions, fees, and slippage
 - [ ] Add adverse handling for ambiguous intrabar exits
 - [ ] Persist rejected observations with explicit reason codes
@@ -46,7 +49,7 @@ Exit criterion: either reject the strategy or authorize forward paper observatio
 ## Phase 4 — Forward paper lab
 
 - [ ] Add short scheduled checkpoints rather than a market-long job
-- [ ] Persist resumable session state
+- [ ] Persist resumable session state and the $1,000 paper ledger
 - [ ] Build a date-wise dashboard
 - [ ] Add data-health and duplicate-session guards
 - [ ] Accumulate a predeclared minimum evidence window
