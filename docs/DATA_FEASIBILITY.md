@@ -1,60 +1,35 @@
 # Historical Options Data Feasibility
 
-Status as of 2026-08-21: **provisional go for a small paid-or-credit pilot; no full download authorized.**
+Status as of 2026-08-21: **QuantConnect Cloud selected for the free research path; no paid download authorized.**
 
-## Required evidence
+## Primary path: QuantConnect Cloud
 
-A credible SPY options replay needs instrument definitions plus time-ordered bid and ask observations. A single option OHLC series or one end-of-minute quote is insufficient to reconstruct V2/V3 peak, stop, and gap ordering.
+QuantConnect's AlgoSeek US Equity Options dataset is available without a separate data subscription for cloud backtests. It includes minute trade and quote bars, option contract metadata, and separate bid/ask quote-bar fields. The history begins in 2012, which is sufficient for the predeclared development and validation periods.
 
-The provider-neutral ingestion layer therefore accepts quote observations and constructs separate one-minute bid and ask OHLC bars. Crossed markets, missing prices, and zero-size quotes are rejected with reason codes.
-
-## Preferred pilot: Databento OPRA
-
-Databento's OPRA dataset provides consolidated US equity-option data. Its CBBO-1m schema supplies the final consolidated bid and offer at each minute, and instrument definitions identify contracts. CBBO-1m is useful for coverage checks but does not contain the within-minute high and low required for faithful V2/V3 trailing logic.
-
-For the execution pilot, use CBBO-1s or CMBP-1 observations and derive minute bid/ask bars while preserving event order. Databento documents CBBO-1s and CMBP-1 history from March 2023, while CBBO-1m and other lower-granularity history extend further.
-
-Databento supports pay-as-you-go historical requests and exposes `metadata.get_cost`, so cost must be estimated before every download. New-account credits may cover a limited feasibility sample, but no assumption about available credit should be built into the code.
+The free data is used inside QuantConnect Cloud. It is not copied to this repository, exported as licensed raw data, or assumed to be available to GitHub Actions. The free account's cloud backtest must therefore be launched from a QuantConnect project.
 
 Official references:
 
-- [Databento options/OPRA coverage](https://databento.com/options)
-- [CBBO and CMBP schema definitions](https://databento.com/docs/schemas-and-data-formats/cbbo)
-- [Historical pricing and cost estimation](https://databento.com/pricing/)
+- [AlgoSeek US Equity Options dataset](https://www.quantconnect.com/data/algoseek-us-equity-options)
+- [Equity-options historical data](https://www.quantconnect.com/docs/v2/writing-algorithms/historical-data/asset-classes/equity-options)
+- [Cloud backtest deployment](https://www.quantconnect.com/docs/v2/cloud-platform/backtesting/deployment)
 
-## Alternatives
+## Resolution limitation
 
-- Massive exposes per-contract historical quotes with bid, ask, sizes, and nanosecond timestamps; its bulk options quote history dates to March 2022. This is a credible fallback if plan access and per-contract extraction cost are preferable. [Massive historical options quotes](https://massive.com/docs/rest/options/quotes)
-- ThetaData advertises historical OPRA trades, quotes, chain snapshots, and NBBO coverage. It is a second fallback, but the local-terminal workflow and subscription tier must be evaluated before integration. [ThetaData options data](https://www.thetadata.net/options-data)
+Minute option quote bars provide bid and ask OHLC but cannot always establish the ordering of a peak and trailing-stop touch within the same minute. The research protocol must use adverse stop-first handling when ordering is ambiguous. If a strategy's apparent edge depends on resolving that ordering, it requires an event-level independent pilot before acceptance.
 
-## Pilot specification
+## Optional independent path: Databento OPRA
 
-The first data request must be deliberately small:
+Databento remains an optional verification provider for consolidated OPRA CBBO-1s or CMBP-1 observations. It is not required for the initial underlying study and no download is authorized.
 
-- Five non-consecutive regular SPY sessions across different volatility conditions
-- SPY underlying one-minute bars
-- Contract definitions for 1–7 DTE calls and puts
-- Only the contract slice needed around the $1.60–$2.20 band and 0.35–0.45 absolute delta
-- CBBO-1s or CMBP-1 for the selected contracts
-- Cost estimate recorded before download
-- No secrets or downloaded licensed data committed to Git
+The manual `.github/workflows/databento-cost-estimate.yml` workflow calls only `metadata.get_cost`, accepts no range over seven days, and records `download_performed: false`. A future pilot may proceed only after an explicit cost review and must never commit API keys or licensed data.
 
-## Cost-estimate workflow
+## Stage gates
 
-`.github/workflows/databento-cost-estimate.yml` is manual-only. It runs the official pinned Python client against `metadata.get_cost`, accepts no range longer than seven days, and never invokes `timeseries.get_range` or a batch download.
+1. Screen frozen entry families on SPY underlying minute bars.
+2. Reject families that fail development or validation.
+3. Replay surviving signals with QuantConnect option quote bars using ask entry, bid exit, costs, and adverse intrabar assumptions.
+4. Use an optional higher-resolution OPRA pilot only if minute ambiguity materially changes the decision.
+5. Preserve 2025+ as untouched holdout until the complete option specification is frozen.
 
-The initial estimate may use `SPY.OPT` with `stype_in=parent` to price the full parent-symbol request. Later estimates should use no more than 25 explicitly resolved raw contracts so the cost reflects the intended debit/delta slice. Every output declares `download_performed: false` and is retained as a workflow artifact for 30 days.
-
-Required setup: add a repository Actions secret named `DATABENTO_API_KEY`. Do not expose the key as a workflow input or commit it.
-
-## Acceptance gates
-
-- At least 99% of expected regular-session minutes available for selected contracts
-- Valid, non-crossed bid/ask observations with positive sizes
-- Correct daylight-saving and early-close handling
-- Deterministic contract identity and expiry metadata
-- Reproducible minute bars from ordered observations
-- Enough quote density to resolve stop and trail ordering
-- Pilot cost acceptable before any larger request
-
-Failure of these gates means no options backtest. The fallback is a SPY/QQQ cash-ETF research lab, not fabricated option fills.
+Failure at any gate stops the options path. A low-fidelity fill model is not an acceptable substitute.
