@@ -39,6 +39,14 @@ The first data request must be deliberately small:
 - Cost estimate recorded before download
 - No secrets or downloaded licensed data committed to Git
 
+## Cost-estimate workflow
+
+`.github/workflows/databento-cost-estimate.yml` is manual-only. It runs the official pinned Python client against `metadata.get_cost`, accepts no range longer than seven days, and never invokes `timeseries.get_range` or a batch download.
+
+The initial estimate may use `SPY.OPT` with `stype_in=parent` to price the full parent-symbol request. Later estimates should use no more than 25 explicitly resolved raw contracts so the cost reflects the intended debit/delta slice. Every output declares `download_performed: false` and is retained as a workflow artifact for 30 days.
+
+Required setup: add a repository Actions secret named `DATABENTO_API_KEY`. Do not expose the key as a workflow input or commit it.
+
 ## Acceptance gates
 
 - At least 99% of expected regular-session minutes available for selected contracts

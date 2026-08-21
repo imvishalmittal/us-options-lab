@@ -1,0 +1,79 @@
+name: Databento cost estimate
+
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        description: ISO-8601 start with offset (maximum seven-day range)
+        required: true
+        type: string
+      end:
+        description: ISO-8601 end with offset
+        required: true
+        type: string
+      schema:
+        description: OPRA schema to price
+        required: true
+        default: cbbo-1s
+        type: choice
+        options:
+          - cbbo-1s
+          - cmbp-1
+          - cbbo-1m
+          - definition
+      symbols:
+        description: Comma-separated raw symbols, or SPY.OPT with parent symbology
+        required: true
+        default: SPY.OPT
+        type: string
+      stype_in:
+        description: Input symbol type
+        required: true
+        default: parent
+        type: choice
+        options:
+          - parent
+          - raw_symbol
+
+permissions:
+  contents: read
+
+jobs:
+  estimate-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install official Databento client
+        run: pip install --requirement requirements-databento.txt
+      - name: Require repository secret
+        env:
+          DATABENTO_API_KEY: ${{ secrets.DATABENTO_API_KEY }}
+        run: test -n "$DATABENTO_API_KEY"
+      - name: Estimate cost without downloading data
+        env:
+          DATABENTO_API_KEY: ${{ secrets.DATABENTO_API_KEY }}
+          INPUT_END: ${{ inputs.end }}
+          INPUT_SCHEMA: ${{ inputs.schema }}
+          INPUT_START: ${{ inputs.start }}
+          INPUT_STYPE_IN: ${{ inputs.stype_in }}
+          INPUT_SYMBOLS: ${{ inputs.symbols }}
+        run: |
+          python scripts/estimate_databento_cost.py \
+            --start "$INPUT_START" \
+            --end "$INPUT_END" \
+            --schema "$INPUT_SCHEMA" \
+            --symbols "$INPUT_SYMBOLS" \
+            --stype-in "$INPUT_STYPE_IN" | tee cost-estimate.json
+      - name: Upload estimate
+        uses: actions/upload-artifact@v4
+        with:
+          name: databento-cost-estimate
+          path: cost-estimate.json
+          retention-days: 30
