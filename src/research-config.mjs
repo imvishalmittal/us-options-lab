@@ -12,6 +12,12 @@ export const RESEARCH_CONFIG = deepFreeze({
   mode: "RESEARCH_ONLY",
   liveOrdersEnabled: false,
   brokerIntegrationEnabled: false,
+  paperAccount: {
+    startingCapitalUsd: 1000,
+    cashOnly: true,
+    maximumConcurrentPositions: 1,
+    maximumInitialDebitUsd: 220,
+  },
   market: {
     timezone: "America/New_York",
     primaryUnderlying: "SPY",
@@ -63,6 +69,13 @@ export function validateResearchConfig(config = RESEARCH_CONFIG) {
   assert(config.mode === "RESEARCH_ONLY", "mode must remain RESEARCH_ONLY");
   assert(config.liveOrdersEnabled === false, "live orders must remain disabled");
   assert(config.brokerIntegrationEnabled === false, "broker integration must remain disabled");
+  assert(config.paperAccount.startingCapitalUsd === 1000, "paper starting capital must remain $1,000");
+  assert(config.paperAccount.cashOnly === true, "paper account must remain cash-only");
+  assert(config.paperAccount.maximumConcurrentPositions === 1, "only one paper position is allowed");
+  assert(
+    config.paperAccount.maximumInitialDebitUsd <= config.paperAccount.startingCapitalUsd,
+    "initial debit cannot exceed paper capital",
+  );
   assert(config.market.primaryUnderlying === "SPY", "the foundation phase is SPY-only");
   assert(config.market.additionalUnderlyingsEnabled === false, "additional underlyings are not enabled");
   assert(config.execution.contractsPerSimulation === 1, "simulate exactly one contract");
