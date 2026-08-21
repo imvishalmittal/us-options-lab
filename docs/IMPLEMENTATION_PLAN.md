@@ -2,7 +2,7 @@
 
 ## Status
 
-Strategy catalog and causal quote/exit primitives are implemented. No market data has been downloaded and no strategy backtest has been run.
+The strategy catalog, causal quote/exit primitives, and a QuantConnect-ready underlying entry simulator are implemented. No strategy result has yet been accepted, no options replay has run, and no candidate is paper-enabled.
 
 ## Phase 0 — Repository foundation
 
@@ -14,43 +14,40 @@ Strategy catalog and causal quote/exit primitives are implemented. No market dat
 - [x] CI syntax and regression tests
 - [x] Research protocol and data-quality gates
 
-## Phase 1 — Historical-data and strategy feasibility
+## Phase 1 — Data paths
 
-- [x] Define four US-specific entry candidates across open, midday, and power hour
-- [x] Preserve V2/V3 only as disabled secondary exit benchmarks
-- [x] Define provider-neutral ordered quote observations and minute bid/ask bars
-- [x] Reject crossed, invalid, and zero-size quotes with reason codes
-- [x] Shortlist Databento OPRA as the preferred small pilot
-- [x] Add a bounded, metadata-only Databento cost-estimate adapter
-- [ ] Configure `DATABENTO_API_KEY` as a repository Actions secret
-- [ ] Run and record `metadata.get_cost` before downloading any OPRA data
-- [ ] Evaluate five non-consecutive SPY sessions across volatility regimes
-- [ ] Measure missing, stale, crossed, and zero-size quotes
-- [ ] Verify US holiday, early-close, and daylight-saving behavior
-- [ ] Produce a go/no-go feasibility report from actual pilot data
+- [x] Define provider-neutral ordered option-quote observations and minute bid/ask bars
+- [x] Add a bounded, metadata-only Databento cost estimator
+- [x] Select QuantConnect Cloud as the free primary backtest environment
+- [x] Keep licensed QuantConnect data inside QuantConnect Cloud
+- [ ] Use Databento only for an optional independent high-resolution quote pilot
 
-Exit criterion: a reproducible sample proves that causal expired-contract bid/ask reconstruction is possible at an acceptable cost. Otherwise stop the options backtest.
+QuantConnect's free cloud data is sufficient for the initial SPY entry study and later minute-level option research. Databento remains useful if event ordering or independent fill verification is required; no paid download is authorized by this plan.
 
 ## Phase 2 — Underlying entry backtests
 
-- [ ] Freeze numeric entry thresholds using development data only
-- [ ] Test Opening Drive and Failed Open Break first
-- [ ] Test Midday Compression only after the opening study is frozen
-- [ ] Test Power-Hour Momentum with explicit out-of-sample skepticism
-- [ ] Reject entry families that fail development and validation
-- [ ] Preserve an untouched holdout period
+- [x] Freeze Opening Drive and Failed Open Break V1 rules
+- [x] Implement a provider-neutral, order-free causal simulator
+- [x] Add a QuantConnect Cloud wrapper for development and validation
+- [x] Exclude 2025+ holdout from executable parameters
+- [ ] Run 2018–2022 development in QuantConnect and record the backtest ID
+- [ ] Run 2023–2024 validation without changing thresholds
+- [ ] Reject entry families that fail either period
+- [ ] Consider Midday Compression only after the opening study decision
+- [ ] Consider Power-Hour Momentum as a separately frozen study
 
 Exit criterion: only entry families with stable SPY-level evidence proceed to option replay.
 
 ## Phase 3 — Options replay
 
+- [ ] Subscribe to SPY option chains with at least one full DTE
 - [ ] Implement causal contract selection
-- [ ] Model the single $1,000 paper ledger and available cash
-- [ ] Model ask entry, bid exit, commissions, fees, and slippage
-- [ ] Compare the structural 2R exit against V2 and V3 on identical cohorts
+- [ ] Model the single $1,000 ledger and available cash
+- [ ] Model ask entry, bid exit, commissions, fees, spread, and slippage
+- [ ] Compare structural 2R against V2 and V3 on the identical trade cohort
 - [ ] Add adverse handling for unresolved intrabar ambiguity
-- [ ] Persist rejected observations with explicit reason codes
 - [ ] Compare delta/debit selection before the fixed-$1.80 selector
+- [ ] Preserve 2025+ as final holdout until the full specification is frozen
 
 Exit criterion: deterministic replay, full audit trail, zero look-ahead violations, and robust validation/holdout results.
 
@@ -60,7 +57,7 @@ Exit criterion: deterministic replay, full audit trail, zero look-ahead violatio
 - [ ] Reject strategies that depend on one period or a few outliers
 - [ ] Publish a signed-off research report
 
-Exit criterion: either reject the strategy or authorize forward paper observation. Historical profit alone is insufficient.
+Exit criterion: reject the strategy or authorize forward paper observation. Historical profit alone is insufficient.
 
 ## Phase 5 — Forward paper lab
 
