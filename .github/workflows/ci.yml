@@ -20,9 +20,5 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: package-lock.json
-      - name: Install project metadata
-        run: npm install --package-lock-only --ignore-scripts
       - name: Run checks and tests
         run: npm run ci
