@@ -7,14 +7,14 @@ import unittest
 ROOT = pathlib.Path(__file__).parents[1]
 sys.path.insert(0, str(ROOT))
 
-from quantconnect.strategy_core import Bar, StrategyRunner
+from quantconnect.strategy_core import ResearchBar, StrategyRunner
 
 
 DAY = datetime(2024, 1, 3, 9, 30)
 
 
 def bar(minute, open_, high, low, close, volume=100):
-    return Bar(DAY + timedelta(minutes=minute), open_, high, low, close, volume)
+    return ResearchBar(DAY + timedelta(minutes=minute), open_, high, low, close, volume)
 
 
 def seed_opening_range(runner):
@@ -81,6 +81,22 @@ class QuantConnectStrategyCoreTests(unittest.TestCase):
         late_minute = (15 * 60 + 45) - (9 * 60 + 30)
         runner.on_bar(bar(late_minute, 100.20, 100.25, 100.15, 100.22))
         self.assertEqual(runner.completed[0].exit_reason, "FORCED_1545")
+        self.assertIsNone(runner.open_trade)
+
+    def test_exchange_calendar_callback_can_force_early_close(self):
+        runner = StrategyRunner("US_FAILED_OPEN_BREAK")
+        seed_opening_range(runner)
+        runner.on_bar(bar(15, 99.90, 100.08, 99.70, 100.02))
+        runner.on_bar(bar(16, 100.02, 100.18, 100.00, 100.12))
+        runner.on_bar(bar(17, 100.14, 100.20, 100.10, 100.18))
+        early_close_minute = (12 * 60 + 44) - (9 * 60 + 30)
+        exit_bar = bar(early_close_minute, 100.20, 100.25, 100.15, 100.22)
+        runner.on_bar(exit_bar)
+        runner.force_close(exit_bar, "FORCED_15_MIN_BEFORE_EXCHANGE_CLOSE")
+        self.assertEqual(
+            runner.completed[0].exit_reason,
+            "FORCED_15_MIN_BEFORE_EXCHANGE_CLOSE",
+        )
         self.assertIsNone(runner.open_trade)
 
     def test_never_opens_second_trade_same_day(self):

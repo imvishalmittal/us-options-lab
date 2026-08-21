@@ -22,7 +22,8 @@ The holdout is absent from executable parameters. Thresholds must not be changed
 - Structural initial stop and fixed 2R target.
 - If stop and target occur in the same minute, the stop is assumed first.
 - A gap through the stop exits at the worse opening price.
-- Remaining positions exit on the 15:45 bar close.
+- Remaining positions exit 15 minutes before the exchange's actual close
+  (15:45 ET on regular sessions and 12:45 ET on standard early-close sessions).
 - Strategies are alternative simulations; their R must not be added as one account.
 
 VWAP is calculated causally from completed one-minute typical price and volume.

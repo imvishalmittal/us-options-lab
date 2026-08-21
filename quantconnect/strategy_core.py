@@ -20,7 +20,7 @@ FORCED_EXIT = time(15, 45)
 
 
 @dataclass(frozen=True)
-class Bar:
+class ResearchBar:
     timestamp: datetime
     open: float
     high: float
@@ -47,7 +47,7 @@ class Signal:
 
 
 @dataclass
-class Trade:
+class ResearchTrade:
     strategy: str
     direction: int
     signal_at: datetime
@@ -79,7 +79,7 @@ class StrategyRunner:
         if strategy not in {"US_OPENING_DRIVE", "US_FAILED_OPEN_BREAK"}:
             raise ValueError(f"unsupported strategy: {strategy}")
         self.strategy = strategy
-        self.completed: list[Trade] = []
+        self.completed: list[ResearchTrade] = []
         self.events: list[dict[str, Any]] = []
         self.sessions: set[date] = set()
         self.traded_sessions: set[date] = set()
@@ -95,7 +95,7 @@ class StrategyRunner:
         self._drive_count = 0
         self._rejection: Optional[Rejection] = None
         self._pending: Optional[Signal] = None
-        self._trade: Optional[Trade] = None
+        self._trade: Optional[ResearchTrade] = None
         self._traded_today = False
 
     @property
@@ -107,10 +107,10 @@ class StrategyRunner:
         return self._pending
 
     @property
-    def open_trade(self) -> Optional[Trade]:
+    def open_trade(self) -> Optional[ResearchTrade]:
         return self._trade
 
-    def on_bar(self, bar: Bar) -> list[dict[str, Any]]:
+    def on_bar(self, bar: ResearchBar) -> list[dict[str, Any]]:
         """Consume one completed regular-session bar in chronological order."""
         clock = bar.timestamp.time()
         if clock < REGULAR_OPEN or clock >= time(16, 0):
@@ -138,7 +138,15 @@ class StrategyRunner:
             signal = self._detect_signal(bar, prior_volumes)
             if signal is not None:
                 self._pending = signal
-                new_events.append(self._event("SIGNAL", bar.timestamp, reason=signal.reason))
+                new_events.append(
+                    self._event(
+                        "SIGNAL",
+                        bar.timestamp,
+                        reason=signal.reason,
+                        direction=signal.direction,
+                        stop=signal.stop,
+                    )
+                )
 
         self._recent_volumes.append(bar.volume)
         self.events.extend(new_events)
@@ -162,14 +170,14 @@ class StrategyRunner:
         self._pending = None
         self._traded_today = False
 
-    def _update_opening_range(self, bar: Bar) -> None:
+    def _update_opening_range(self, bar: ResearchBar) -> None:
         if self._opening_open is None:
             self._opening_open = bar.open
         self._opening_high = bar.high if self._opening_high is None else max(self._opening_high, bar.high)
         self._opening_low = bar.low if self._opening_low is None else min(self._opening_low, bar.low)
         self._opening_bars += 1
 
-    def _update_session_indicators(self, bar: Bar) -> None:
+    def _update_session_indicators(self, bar: ResearchBar) -> None:
         typical = (bar.high + bar.low + bar.close) / 3.0
         self._cum_price_volume += typical * bar.volume
         self._cum_volume += bar.volume
@@ -180,7 +188,7 @@ class StrategyRunner:
             return 0.0
         return self._cum_price_volume / self._cum_volume
 
-    def _detect_signal(self, bar: Bar, prior_volumes: list[float]) -> Optional[Signal]:
+    def _detect_signal(self, bar: ResearchBar, prior_volumes: list[float]) -> Optional[Signal]:
         if self.strategy == "US_OPENING_DRIVE":
             return self._opening_drive_signal(bar, prior_volumes)
         return self._failed_break_signal(bar)
@@ -192,7 +200,7 @@ class StrategyRunner:
         width_fraction = (self._opening_high - self._opening_low) / self._opening_open
         return 0.0015 <= width_fraction <= 0.0080
 
-    def _opening_drive_signal(self, bar: Bar, prior_volumes: list[float]) -> Optional[Signal]:
+    def _opening_drive_signal(self, bar: ResearchBar, prior_volumes: list[float]) -> Optional[Signal]:
         clock = bar.timestamp.time()
         if clock < time(9, 45) or clock > time(10, 30) or not self._range_is_eligible():
             return None
@@ -232,7 +240,7 @@ class StrategyRunner:
             reason="two_close_opening_range_acceptance_with_vwap_and_volume",
         )
 
-    def _failed_break_signal(self, bar: Bar) -> Optional[Signal]:
+    def _failed_break_signal(self, bar: ResearchBar) -> Optional[Signal]:
         clock = bar.timestamp.time()
         if clock < time(9, 45) or clock > time(11, 0) or not self._range_is_eligible():
             return None
@@ -275,7 +283,7 @@ class StrategyRunner:
             self._rejection = Rejection(-1, bar.timestamp, bar.high, bar.low)
         return None
 
-    def _enter_pending_at_next_open(self, bar: Bar, new_events: list[dict[str, Any]]) -> None:
+    def _enter_pending_at_next_open(self, bar: ResearchBar, new_events: list[dict[str, Any]]) -> None:
         signal = self._pending
         if signal is None or bar.timestamp <= signal.observed_at:
             return
@@ -285,7 +293,7 @@ class StrategyRunner:
             new_events.append(self._event("REJECTED", bar.timestamp, reason="gap_invalidated_stop"))
             return
         target = bar.open + signal.direction * 2.0 * risk
-        self._trade = Trade(
+        self._trade = ResearchTrade(
             strategy=self.strategy,
             direction=signal.direction,
             signal_at=signal.observed_at,
@@ -298,9 +306,18 @@ class StrategyRunner:
         self._traded_today = True
         assert self._session_date is not None
         self.traded_sessions.add(self._session_date)
-        new_events.append(self._event("ENTRY", bar.timestamp, price=bar.open))
+        new_events.append(
+            self._event(
+                "ENTRY",
+                bar.timestamp,
+                price=bar.open,
+                direction=signal.direction,
+                stop=signal.stop,
+                target=target,
+            )
+        )
 
-    def _manage_trade(self, bar: Bar, new_events: list[dict[str, Any]]) -> None:
+    def _manage_trade(self, bar: ResearchBar, new_events: list[dict[str, Any]]) -> None:
         trade = self._trade
         assert trade is not None
         favorable = (bar.high - trade.entry) if trade.direction == 1 else (trade.entry - bar.low)
@@ -328,7 +345,7 @@ class StrategyRunner:
             self._close_trade(bar, bar.close, "FORCED_1545", new_events)
 
     def _close_trade(
-        self, bar: Bar, exit_price: float, reason: str, new_events: list[dict[str, Any]]
+        self, bar: ResearchBar, exit_price: float, reason: str, new_events: list[dict[str, Any]]
     ) -> None:
         trade = self._trade
         assert trade is not None
@@ -339,6 +356,22 @@ class StrategyRunner:
         self.completed.append(trade)
         self._trade = None
         new_events.append(self._event("EXIT", bar.timestamp, price=exit_price, reason=reason))
+
+    def force_close(self, bar: ResearchBar, reason: str) -> list[dict[str, Any]]:
+        """Close an open virtual trade at the latest completed bar's close.
+
+        The QuantConnect wrapper calls this 15 minutes before the exchange's
+        actual close, which also covers US early-close sessions.  Keeping the
+        exchange calendar in LEAN avoids hard-coded holiday tables here.
+        """
+        if self._trade is None:
+            return []
+        if self._session_date != bar.timestamp.date():
+            raise RuntimeError("forced exit bar must belong to the active session")
+        events: list[dict[str, Any]] = []
+        self._close_trade(bar, bar.close, reason, events)
+        self.events.extend(events)
+        return events
 
     def _event(self, kind: str, timestamp: datetime, **details: Any) -> dict[str, Any]:
         return {"strategy": self.strategy, "event": kind, "timestamp": timestamp.isoformat(), **details}
@@ -391,7 +424,7 @@ class EntryResearchEngine:
             for name in ("US_OPENING_DRIVE", "US_FAILED_OPEN_BREAK")
         }
 
-    def on_bar(self, bar: Bar) -> list[dict[str, Any]]:
+    def on_bar(self, bar: ResearchBar) -> list[dict[str, Any]]:
         events: list[dict[str, Any]] = []
         for runner in self.runners.values():
             events.extend(runner.on_bar(bar))
@@ -399,3 +432,9 @@ class EntryResearchEngine:
 
     def summaries(self) -> dict[str, dict[str, Any]]:
         return {name: runner.summary() for name, runner in self.runners.items()}
+
+    def force_close(self, bar: ResearchBar, reason: str) -> list[dict[str, Any]]:
+        events: list[dict[str, Any]] = []
+        for runner in self.runners.values():
+            events.extend(runner.force_close(bar, reason))
+        return events
