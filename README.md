@@ -6,8 +6,10 @@ A separate, research-only laboratory for testing systematic US options strategie
 
 The first study is intentionally narrow:
 
+- $1,000 simulated starting capital in a cash-only paper account
 - SPY long calls or long puts
-- One simulated contract
+- One simulated contract and no more than one open position
+- Maximum initial option debit of $220
 - One-minute causal market data
 - At least one full day to expiry; no 0DTE
 - Entry research window: 09:35–10:00 ET
@@ -34,6 +36,7 @@ If that evidence is unavailable or too costly, this options study stops and the 
 ## Safety boundary
 
 - `mode` is hard-coded to `RESEARCH_ONLY`.
+- The $1,000 balance is simulated and cannot fund or place an order.
 - Live orders and broker integration are disabled and regression-tested.
 - The repository must not contain broker credentials or order endpoints.
 - The present India-resident setup must not be assumed to permit overseas derivatives.
