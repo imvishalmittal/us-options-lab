@@ -5,6 +5,10 @@
 The underlying and option replay stages are complete. Opening Drive passed the
 underlying gate, but all tested option implementations failed development. No
 candidate is paper-enabled; validation/holdout remain closed to failed variants.
+The separately frozen Intraday V2 study was run with Alpaca SIP one-minute
+bars. Noise-Area Momentum passed 2018–2022 development and 2023 validation;
+Closing-Half-Hour Momentum failed development and is retired. Noise-Area now
+awaits a causal, cost-aware option replay before any forward paper session.
 
 ## Phase 0 — Repository foundation
 
@@ -36,7 +40,16 @@ QuantConnect's free cloud data is sufficient for the initial SPY entry study and
 - [x] Run 2023–2024 validation without changing thresholds
 - [x] Reject Failed Open Break after development failure
 - [ ] Consider Midday Compression only after the opening study decision
-- [ ] Consider Power-Hour Momentum as a separately frozen study
+- [x] Freeze Noise-Area and Closing-Half-Hour Momentum as Intraday V2
+- [x] Implement their separate causal engine and QuantConnect wrapper
+- [x] Compile the self-contained V2 harness in QuantConnect project 35552604
+- [x] Run Intraday V2 development before opening any option replay
+- [x] Validate the surviving Noise-Area hypothesis on untouched 2023 data
+- [x] Reject Closing-Half-Hour Momentum after unstable development
+
+Alpaca SIP minute bars supplied the underlying study without requiring payment
+details. QuantConnect remains blocked by account verification and is not needed
+for reproducing the underlying result.
 
 Exit criterion: only entry families with stable SPY-level evidence proceed to option replay.
 
