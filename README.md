@@ -46,6 +46,13 @@ QuantConnect algorithm IDs are in
 
 The 2025+ holdout is intentionally unavailable in executable parameters. No candidate strategy is paper-enabled.
 
+The next frozen entry cycle is specified separately in
+[SPY Intraday V2](docs/ENTRY_V2_SPEC.md): gap-adjusted Noise-Area Momentum and
+Closing-Half-Hour Momentum. [Intraday V2 results](docs/INTRADAY_V2_BACKTEST_RESULTS.md)
+show that Noise-Area passed the underlying development/validation gate and
+Closing-Half-Hour was rejected. Noise-Area still requires a cost-aware option
+replay before any forward paper session.
+
 ## Safety boundary
 
 - `mode` remains `RESEARCH_ONLY`.
@@ -71,6 +78,7 @@ Run the actual historical study in QuantConnect Cloud using [the QuantConnect in
 
 - [Research protocol](docs/RESEARCH_PROTOCOL.md)
 - [Frozen SPY Entry V1 specification](docs/ENTRY_V1_SPEC.md)
+- [Frozen SPY Intraday V2 specification](docs/ENTRY_V2_SPEC.md)
 - [US strategy research](docs/STRATEGY_RESEARCH.md)
 - [Historical-data feasibility](docs/DATA_FEASIBILITY.md)
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
