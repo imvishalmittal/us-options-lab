@@ -15,7 +15,7 @@ class QuantConnectSafetyTests(unittest.TestCase):
             "liquidate(",
             "exercise_option(",
         )
-        for filename in ("main.py", "options_main.py"):
+        for filename in ("main.py", "options_main.py", "intraday_v2_main.py"):
             source = (ROOT / "quantconnect" / filename).read_text(encoding="utf-8").lower()
             for token in forbidden:
                 self.assertNotIn(token, source)
@@ -32,6 +32,16 @@ class QuantConnectSafetyTests(unittest.TestCase):
         self.assertIn('"validation": ((2023, 1, 1), (2024, 12, 31))', source)
         self.assertNotIn("2025,", source)
         self.assertNotIn("2026,", source)
+
+    def test_intraday_v2_preserves_holdout_and_exchange_exit(self):
+        source = (ROOT / "quantconnect" / "intraday_v2_main.py").read_text(
+            encoding="utf-8"
+        )
+        periods = source.split("PERIODS =", 1)[1].split("class ", 1)[0]
+        self.assertNotIn("2025", periods)
+        self.assertNotIn("2026", periods)
+        self.assertIn("2025+ remains reserved holdout", source)
+        self.assertIn("before_market_close(self.spy, 1)", source)
 
 
 if __name__ == "__main__":
